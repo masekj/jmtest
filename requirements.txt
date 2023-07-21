@@ -1,5 +1,0 @@
-pip>=21.3.1
-ipython==7.29.0
-matplotlib==3.4.3
-numpy==1.20.3
-scipy==1.7.2
