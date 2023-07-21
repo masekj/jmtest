@@ -2,10 +2,10 @@ name: myenv
 channels:
   - conda-forge
 dependencies:
-  - mamba=0.20.0
   - python=3.10
   - pip
   - ipython=7.29.0
   - matplotlib=3.4.3
-  - numpy=1.20.3
+  - numpy=1.21.3
   - scipy=1.7.2
+  - python_abi=3.10.*_cp310
