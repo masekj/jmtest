@@ -9,5 +9,5 @@ The project is also runnable on Binder:
 
 Sample_generator.ipynb: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/masekj/jmtest/HEAD?labpath=Sample_generator.ipynb)
 
-Numerical_example.ipynb: odkaz na Binder
+Numerical_example.ipynb: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/masekj/jmtest/HEAD?labpath=Numerical_example.ipynb)
 
