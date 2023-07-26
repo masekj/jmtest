@@ -1,211 +1,127 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 # Copyright (C) 2023 Miroslav Vořechovský and Jan Mašek
 # MIT licence https://en.wikipedia.org/wiki/MIT_License
 
+from SampleTiler import strat_sample_by_tiling, get_LHS_median_sample, get_scrambled_Halton_sample
+from Tools import plot_2D_view_of_tiling, plot_3D_view_of_tiling
+import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import norm, rankdata, qmc
-from scipy import stats
-from IPython.display import FileLink, FileLinks
+from IPython.display import FileLink, HTML
+from ipywidgets import Output
 
-################## root sampling methods ##################### 
-def get_LHS_median_sample(Ns, dim):
-    return (get_LHS_ranks(Ns,dim) + 0.5)/Ns
+
+# Performs a sample construction using the Sample Tiling metod. 
+# For details see publication: 
+# 
+# [1] Jan Mašek & Miroslav Vořechovský: Optimal sampling in a hypercube: stratified sample tiling. Advances in Engineering Software, 2023
+#  
+# 
+#  
+# ### Parameters
+# | Parameter      | Description                                                                                    | Type          |
+# | :-------------- |:----------------------------------------------------------------------------------------------- |:------------- |
+# | nv             | Dimension of the design domain                                                                  | Integer       |
+# | ns             | Number of points in each tile                                                                   | Integer       |
+# | t              | The number of strata (tiles) along each dimension                                               | Integer       |
+# | my_tile        | Provided point sample that will be used for tiling. If my_tile is None, random sampling will be conducted according to tile_type. | np array (ns,nv)  |
+# | tile_type      | Sampling method used for generation of tiles. Options: 'LH' (Latin Hypercube Sample), 'Halton' (scrambled Halton RMQC sample), 'SRS' (Simple Random Sample - default) | String        |
+# | median      | Triggers point positions in strata median for tile_type='LH'. | Boolean      |
+# | one_tile       | If True, tiling from an identical tile sample. If False, each tile is generated randomly.     | Boolean       |
+# | var_perms      | Triggers random variable permutations                                                          | Boolean       |
+# | rand_revers    | Triggers random variable reversions                                                            | Boolean       |
+# | t_shifts       | Triggers minor coordinate shifts to achieve regular 1D projections, see Eq. (5) in [1].                            | Boolean       |
+# | b_shifts       | Triggers pillar shifting, see Sec. 3.1 in [1].                                                                     | Boolean       |
+# | large_shifts   | Triggers large coordinate shifts for high dimension cluster removal, see Eq. (6)  in [1].                            | Boolean       |
+# 
+# ### Returns
+# | Parameter      | Description                                                                         | Type         |
+# | :------------- |:------------------------------------------------------------------------------------|:-------------|
+# | Point sample   | Tiled point set. 2D numpy array of Ns coordinates in nv dimensions. (Ns = ns * t\*\*nv)                | np array (Ns,nv)  |
+# 
+# Feel free to explore the properties of tiled point sets for various input parameters!
+
+# In[2]:
+
+
+# The number of strata (tiles) along each dimension
+t = 5
+
+# The number of points within each tile
+ns = 6
+
+# The dimension of the design domain
+nv = 3
+
+# The total number of points within the sample
+Ns = ns*t**nv
+
+# example of supplying an own tile in the correct format, 
+# to be used in strat_sample_by_tiling function as 'my_tile':
+# my_tile = get_LHS_median_sample(ns, nv) #prepare own LHS-M tile
+# my_tile = get_scrambled_Halton_sample(ns, nv) #prepare own Halton (scrambled) tile
+
+
+# Sample tiling
+x = strat_sample_by_tiling(nv, ns, t, tile_type = 'LH', median = True, my_tile = None, \
+                           one_tile = True, var_perms = False, rand_revers = False, \
+                           t_shifts = True, b_shifts = False, large_shifts = False)
+
+# Display of a 2D subspace, plot variables in vars_to_plot
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7, 7))
+plot_2D_view_of_tiling(nv, ns, t, x, ax, vars_to_plot = [0,1])
+
+# Save the 2D scatter plot to a pdf file
+plt.savefig("scatter_2D.pdf",dpi = 300,bbox_inches = "tight",pad_inches = 0.01)
+display(FileLink("scatter_2D.pdf"))
+
+# Save the sample to a text file
+np.savetxt('sample.txt', x, delimiter='\t')
+display(FileLink('sample.txt'))
+
+# Save the sample as binary
+np.save('sample.npy' ,x)
+display(FileLink('sample.npy'))
+
+plt.show()
+
+
+# In[3]:
+
+
+# Display of a 3D subspace, plot variables in vars_to_plot
+if nv>2:
+    from mpl_toolkits.mplot3d import Axes3D
     
-def get_scrambled_Halton_sample(Ns, dim):
-    sampler = qmc.Halton(d=dim, scramble=True)
-    return sampler.random(n=Ns)
-
-################## tiling ##################### 
-def strat_sample_by_tiling(nv, ns, t, tile_type = 'MC', median = True, my_tile = None, one_tile = True,\
-                               var_perms = False, rand_revers = False, 
-                               t_shifts = False, b_shifts = False, large_shifts = False):
-    '''
-    Tile a point sample to generate a tiled point set.
-
-    Parameters:
-        nv (int): Dimension of the design domain.
-        ns (int): Number of points in each tile.
-        t (int): The number of strata (tiles) along each dimension.
-        my_tile (np.array): Provided point sample that will be used for tiling.
-                            If my_tile is None, random sampling will be conducted according to tile_type.
-                            Shape: (ns, nv)
-        tile_type (str): Sampling method used for generation of tiles.
-                         Options: 'LH' (Latin Hypercube Sample with random pairing), 'SRS' (Simple Random Sampling).
-        median (bool): Triggers point positions in strata median for tile_type='LH'.  
-        one_tile (bool): If True, tiling from an identical tile sample.
-                         If False, each tile is generated randomly.
-        var_perms (bool): Triggers random variable permutations.
-        rand_revers (bool): Triggers random variable reversions.
-        t_shifts (bool): Triggers minor coordinate shifts to achieve regular 1D LH-like projections, see Eq. (5).
-        b_shifts (bool): Pillar shifting, see Sec. 3.1.
-        large_shifts (bool): Triggers large coordinate shifts for high dimension cluster removal, see Eq. (6).
-
-    Returns:
-        np.array: Tiled point set. 2D numpy array of Ns coordinates in nv dimensions. (Ns = ns * t ** nv)
-    '''
+    # use this for jupyter notebook:
+    #%matplotlib notebook
     
-    # Total number of strata (tiles)
-    T = t**nv
+    # use this for Binder:
+    get_ipython().run_line_magic('matplotlib', 'ipympl')
     
-    # prepare all T = t**nv tiles with ns point each.
-    # these tiles have edge length 1 and they are located in the unit hypercube starting at the origin
-    # shape: (T,ns,nv) 
-    tiles = get_T_tiles_in_unit_hypercube(nv, ns, t, tile_type, median, my_tile, one_tile)
-    
-    ###################################################################################
-    # perform the desired scrambling operations
-    # 
-    if rand_revers:
-        rev = np.random.choice([0,1], t**nv * nv, p=[0.5, 0.5]).reshape((t**nv, nv))
-        # tiles and directions with rev==0 are reversed (all nsim points in a tile)
-        #                      with rev==1 are kept untouched
-        tiles = (1-rev[:, None ,:])*(1-tiles) \
-                 + rev[:, None ,:] *(  tiles)
-        
-    if var_perms:
-        for r in range(T):
-            var = np.random.permutation(nv)
-            tiles[r] = np.take(tiles[r], var, axis=1) #reorder variables according to given permutation 'var'
-        
-    # origins = 'bottom left' corners of all tiles in format (shape t**nv, nv)  
-    o = strat_sample_corners(nv, t)
-    so = o.copy() #copy of the origins
-    
-    if t_shifts:
-        ds = 1./(ns*t**nv) #the smallest distance between point projections along each variable
-        if tile_type == 'MC':
-            ds = 1./(ns*t)
-        # half of ds and half of original LH distance between two points along a line
-        shift_correction = 0.5*ds - 1/(2*t*ns) #corrects for true LHS for t even. Relieves the need of periodic shift
-        
-        s = get_shifts_of_tiles_individual(t,nv,o)
-        #apply shifts to the origins
-        so = o + s*ds + shift_correction
-        if large_shifts: #additional shifts to break small clouds caused by tiny shifts
-            so += s*ds*ns*t 
-    
-    if b_shifts:
-        ds = 1./(ns*t**nv) #the smallest distance between point projections along each variable
-        # half of ds and half of original LH distance between two points along a line
-        shift_correction = 0.5*ds - 1/(2*t*ns) #corrects for true LHS for t even. Relieves the need of periodic shift
-        s = get_shifts_of_tiles_block(t,nv,o)
-        so = o + s*ds + shift_correction
-        
-    # now compose the tiles to a design by adding them to the left corners (potentially shifted)
-    # and finally scale the tile down to edge length 1/t
-    x_3d = so[:, None , : ] + tiles/t #copy the single tile to all the strata
-        
-    #periodic correction of the shift in each tile (compare to the original left bound xo+1/t)
-    if  t_shifts:# and tile_type == 'MC':
-        remainders_after_periodic_shifts = (x_3d - o[:,None,:])%(1/t) #remainders to be added to tile left origins
-        x_3d = o[:,None,:] + remainders_after_periodic_shifts #add remainders to tile left origins
-        #x_3d = np.where(x_3d > o[:,None,:] + 1./t, x_3d - ((x_3d - o[:,None,:])//(1/t))/t, x_3d)
-        #x_3d = np.where(x_3d > o[:,None,:] + 1./t, x_3d - 1./t, x_3d)
-        #x_3d = np.where(x_3d < o[:,None,:]       , x_3d + 1./t, x_3d)
-        
-    if b_shifts:
-        x_3d = np.where(x_3d > 1, x_3d - 1., x_3d)
-        
-    return np.reshape(x_3d,(ns * t**nv,nv))
+    fig = plt.figure(figsize=(7, 7))
+    ax3 = fig.add_subplot(projection='3d')
+    plot_3D_view_of_tiling(nv, ns, t, x, ax3, vars_to_plot=[0,1,2])
+
+
+# In[4]:
+
+
+"""
+# loading the array from the saved binary file
+loaded_array = np.load('sample.npy')
+print(loaded_array)
+plot_2D_view_of_tiling(nv, ns, t, loaded_array, ax, vars_to_plot = [0,1])
+plt.show()
+"""
+
+
+# In[ ]:
 
 
 
-################# auxiliary methods ###########################
 
-def generate_permutations(t,nv, randomized = True):
-    rand_s = np.zeros([nv,t])
-
-    if randomized:
-        for v in range(nv):
-            rand_s[v,:] = np.random.permutation(np.arange(t))
-    else:
-        for v in range(nv):
-            rand_s[v,:] = np.arange(t)
-    return rand_s
-    
-def get_LHS_ranks(Ns,dim):
-    ranks = np.zeros((Ns, dim))
-    arr = np.arange(Ns)
-    for col in range (dim): #each column separately
-        perm = np.random.permutation(arr)
-        ranks[:,col] = perm
-
-    return ranks
-
-def get_shifts_of_tiles_block(t,nv,o):
-    s = np.zeros((t**nv, nv)) #integer shift for every tile (rows) and along every direction (cols)
-    bounds = np.zeros( nv )
-    var_list = list(np.arange(0, nv, 1, dtype=int))
-    for v in range(nv): #index along individual directions to make a shift
-        shift_perm = np.arange(t**(nv-1))
-        shift_perm = np.random.permutation(shift_perm)
-        v_mask = (o[:,v]==0)
-        v_idx = np.where(v_mask)[0] #indices of rows in 's' matrix. fullfiles by t**(nv-1)
-        #cur_list = var_list[:v] + var_list[v+1:] #indices of directions except v
-        for index in range(len(v_idx)):
-            gmask = np.full((t**nv), True) #set all tiles to True
-            bounds = o[v_idx[index],:]
-            for dim in range(nv):
-                if dim != v:
-                    gmask = np.logical_and(gmask , np.isclose(o[:,dim], bounds[dim], rtol=0.1/t)   )#   o[:,v]==r/t
-
-            x_idx = np.where(gmask)[0] #indices of rows in 's' matrix
-            s[x_idx,v] = shift_perm[index] 
-    return s
-
-def get_shifts_of_tiles_individual(t,nv,o):
-    s = np.zeros((t**nv, nv))
-    for v in range(nv): #index along individual directions to make a shift
-        for r in range(t): #index all (slices of) tiles along a given direction
-            shift_perm = np.arange(t**(nv-1))
-            shift_perm = np.random.permutation(shift_perm)
-            mask = np.isclose(o[:,v], r/t, rtol=0.1/t)#   o[:,v]==r/t
-            x_idx = np.where(mask)[0] #indices of rows in 's' matrix
-            for index in range(len(x_idx)):
-                s[x_idx[index],v] = shift_perm[index]
-    return s
-
-def get_one_tile_in_unit_hypercube(nv, ns, t, tile_type = 'MC', median = True):
-    u = 0.5 #for LHS-median
-    if tile_type == 'LH':
-        LHS_ranks = get_LHS_ranks(ns,nv)
-        if not median: #LHS-random selection from 1D strata
-            u = np.random.rand(ns, nv)
-        tile = (LHS_ranks+u)/ns
-    elif tile_type == 'Halton':
-        sampler = qmc.Halton(d=nv, scramble=True)
-        tile = sampler.random(n=ns) #a single Halton tile
-    else: #if tile_type == 'MC':
-        tile = np.random.rand(ns,nv) #a single MC tile 
-    return tile
-
-def get_T_tiles_in_unit_hypercube(nv, ns, t, tile_type = 'MC', median = True, my_tile = None, one_tile = True):
-    T = t**nv
-    
-    if one_tile: # repeat a single tile
-        if (my_tile is None):  #check whether the tile is provided
-            tile = get_one_tile_in_unit_hypercube(nv, ns, t, tile_type, median)
-
-        else:
-            if(my_tile.shape[0] != ns or my_tile.shape[1] != nv):
-                #check whether the size has a correct size
-                print(f'Wrong tile size. Either {my_tile.shape[0]} in not ns={ns}, or nv={my_tile.shape[1]} is not nv={nv}')
-                return None
-            tile = my_tile
-   
-        #copy the tile into T individual tiles - obtain a 3D array (shape: T,ns,nv)
-        tiles = np.tile(tile,(T, 1,1))
-    
-    else: # generate independent tiles
-        tiles=np.zeros((T,ns,nv))#space for T individual tiles, each ns*nv (shape: T,ns,nv)
-        for tile in range(T):
-            #write a single tile in format ns points (rows) and nv cols
-            tiles[tile,:,:] = get_one_tile_in_unit_hypercube(nv, ns, t, tile_type, median)
-
-    return tiles
-
-def strat_sample_corners(nv, t):
-    pa = np.linspace( 0 , 1-1/t , t , endpoint=True) #left tile probability bounds
-    pa_list = [pa] * (nv)
-    p = np.meshgrid(*pa_list)#,indexing='ij')
-    x = np.array(p).reshape((nv, t**nv)).T#returns the standard "design format" (shape t**nv, nv)
-    return x#np.flip(x, axis=1)

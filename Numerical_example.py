@@ -4,7 +4,10 @@
 # In[1]:
 
 
-from SampleTiler import strat_sample_by_tiling, get_LHS_median_sample
+# Copyright (C) 2023 Jan Mašek and Miroslav Vořechovský
+# MIT licence https://en.wikipedia.org/wiki/MIT_License
+
+from SampleTiler import strat_sample_by_tiling, get_LHS_median_sample, get_scrambled_Halton_sample
 from Tools import eval_function
 import numpy as np
 import matplotlib.pyplot as plt
@@ -140,4 +143,10 @@ pVar.legend()
 pRMSE.set_title("Root mean square error (RMSE) ")
 pRMSE.legend()
 plt.show()
+
+
+# In[ ]:
+
+
+
 
