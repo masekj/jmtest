@@ -107,21 +107,3 @@ if nv>2:
     ax3 = fig.add_subplot(projection='3d')
     plot_3D_view_of_tiling(nv, ns, t, x, ax3, vars_to_plot=[0,1,2])
 
-
-# In[4]:
-
-
-"""
-# loading the array from the saved binary file
-loaded_array = np.load('sample.npy')
-print(loaded_array)
-plot_2D_view_of_tiling(nv, ns, t, loaded_array, ax, vars_to_plot = [0,1])
-plt.show()
-"""
-
-
-# In[ ]:
-
-
-
-
