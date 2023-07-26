@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
 
 # Copyright (C) 2023 Miroslav Vořechovský and Jan Mašek
 # MIT licence https://en.wikipedia.org/wiki/MIT_License
@@ -44,8 +42,6 @@ from ipywidgets import Output
 # | Point sample   | Tiled point set. 2D numpy array of Ns coordinates in nv dimensions. (Ns = ns * t\*\*nv)                | np array (Ns,nv)  |
 # 
 # Feel free to explore the properties of tiled point sets for various input parameters!
-
-# In[2]:
 
 
 # The number of strata (tiles) along each dimension
@@ -89,8 +85,6 @@ display(FileLink('sample.npy'))
 
 plt.show()
 
-
-# In[3]:
 
 
 # Display of a 3D subspace, plot variables in vars_to_plot

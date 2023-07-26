@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 # Copyright (C) 2023 Jan Mašek and Miroslav Vořechovský
 # MIT licence https://en.wikipedia.org/wiki/MIT_License
 
@@ -40,8 +37,6 @@ from scipy.stats import qmc
 #  
 #  
 
-# In[2]:
-
 
 # The number of points within each tile
 ns = 8
@@ -76,7 +71,6 @@ sampling_methods.append({"name" : "TP/LHS-M-R" , "color" : "red"   , "dash" : "d
 exact_solution = 1/np.sqrt(3**nv)
 
 
-# In[3]:
 
 
 for method in sampling_methods:
@@ -120,7 +114,6 @@ for method in sampling_methods:
         method["stats"][idx,3] = np.sqrt( np.mean( (method["results"][idx]-exact_solution)**2) )           
 
 
-# In[4]:
 
 
 fig, ( pMean, pVar, pRMSE ) = plt.subplots(nrows=3, ncols=1, figsize=(7, 16))
@@ -145,7 +138,6 @@ pRMSE.legend()
 plt.show()
 
 
-# In[ ]:
 
 
 
