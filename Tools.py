@@ -1,3 +1,6 @@
+# Copyright (C) 2023 Miroslav Vořechovský and Jan Mašek
+# MIT licence https://en.wikipedia.org/wiki/MIT_License
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
@@ -6,6 +9,20 @@ from itertools import cycle
 from scipy.stats import norm, rankdata
 
 def plot_2D_view_of_tiling(nv, ns, t, x, ax, vars_to_plot=[0,1]):
+    '''
+    Plots a 2D view (scatterplot) of sample with two selected variables into the supplied axis. 
+    Uses the supplied information about the number of tiles and number of point per tile to 
+    color the displayed points.
+
+    Parameters:
+        nv (int): Dimension of the supplied (tiled) design.
+        ns (int): Number of points in each tile.
+        t (int): The number of strata (tiles) along each dimension.
+        x : the design (np.array) to be visualized. Shape: (ns*t**nv, nv)
+        ax : axis to be used for plotting
+        vars_to_plot : two variables (coordinates) to be plotted. Must be selected from range [0,nv-1]
+
+    '''
     ax.set_xlim(0,1)
     ax.set_ylim(0,1)
     
@@ -40,6 +57,20 @@ def plot_2D_view_of_tiling(nv, ns, t, x, ax, vars_to_plot=[0,1]):
     ax.scatter(0*x[:,u],  x[:,v],s=50, marker = "_", color='k')
     
 def plot_3D_view_of_tiling(nv, ns, t, x, ax, vars_to_plot=[0,1,2]):
+    '''
+    Plots a 2D view (scatterplot) of sample with two selected variables into the supplied axis. 
+    Uses the supplied information about the number of tiles and number of point per tile to 
+    color the displayed points.
+
+    Parameters:
+        nv (int): Dimension of the supplied (tiled) design.
+        ns (int): Number of points in each tile.
+        t (int): The number of strata (tiles) along each dimension.
+        x : the design (np.array) to be visualized. Shape: (ns*t**nv, nv)
+        ax : axis to be used for plotting
+        vars_to_plot : three variables (coordinates) to be plotted. Must be selected from range [0,nv-1]
+
+    '''
     u = vars_to_plot [0]
     v = vars_to_plot [1]
     w = vars_to_plot [2]
@@ -82,8 +113,20 @@ def plot_3D_view_of_tiling(nv, ns, t, x, ax, vars_to_plot=[0,1,2]):
     ax.scatter(0*x[:,u],  x[:,v],0*x[:,w],s=50, marker = "_", color='k')
     ax.scatter(0*x[:,u],0*x[:,v],  x[:,w],s=50, marker = "_", color='k')
     
-def eval_function(x,function='prodexp'):
-    if function == 'prodexp':
+def eval_function(x,function_name='prodexp'):
+    '''
+    Calculates the estimation of the integral of selected function 
+    via the arithmetical mean of values in the supplied experiment design x.
+
+    Parameters:
+        x : the design (np.array) in which axis 1 is the dimension of the function (number of input random variables nv)
+        function_name : string specifying the function
+
+    Returns:
+        np.array: of results in the shape provided through the design x, apart from axis 1,
+        which is seen as the number of input variables nv.
+    '''
+    if function_name == 'prodexp':
         return np.mean( np.prod( np.exp(-norm.ppf(x)**2), axis=1 ) )
         
         
